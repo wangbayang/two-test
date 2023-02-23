@@ -1,6 +1,6 @@
-import { useEffect } from "react";
-import createExample from "./phaserExample";
-import "./App.css";
+import { useEffect } from 'react';
+import createExample from './phaserExample';
+import './App.css';
 
 function App() {
   useEffect(() => {
