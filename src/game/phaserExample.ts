@@ -1,11 +1,10 @@
 import * as Phaser from 'phaser';
 
-import skyPng from './assets/space3.png';
-import logoPng from './assets/phaser3-logo.png';
-import redPng from './assets/red.png';
+import { WINDOW_WIDTH, WINDOW_HEIGHT } from '../const';
 
-const WINDOW_WIDTH = window.innerWidth;
-const WINDOW_HEIGHT = window.innerHeight;
+import skyPng from '../assets/space3.png';
+import logoPng from '../assets/phaser3-logo.png';
+import redPng from '../assets/red.png';
 
 function preload() {
   const currentScene: Phaser.Scene = this;

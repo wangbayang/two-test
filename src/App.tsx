@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
-import createExample from './phaserExample';
+import createExample from './game/phaserExample';
+import createFirstGame from './game/firstGame';
 import './App.css';
 
 function App() {
   useEffect(() => {
-    createExample();
+    // createExample();
+    createFirstGame();
   }, []);
 
   return <div />;
