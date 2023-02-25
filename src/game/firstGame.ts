@@ -159,7 +159,7 @@ function collectStar(player, star) {
   score += 10;
   scoreText.setText(`score:${score}`);
 
-  if (stars.countActive(true) !== 0) {
+  if (stars.countActive(true) === 0) {
     stars.children.iterate((child: any) => {
       child.enableBody(true, child.x, 0, true, true);
     });
