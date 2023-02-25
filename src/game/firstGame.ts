@@ -67,7 +67,7 @@ function create() {
   platforms.create(WINDOW_WIDTH - 200, 550, 'ground');
 
   player = currentScene.physics.add.sprite(100, 450, 'dude');
-  player.setBounce(0.2);
+  player.setBounce(0);
   player.setCollideWorldBounds(true);
 
   currentScene.physics.add.collider(platforms, player);
@@ -102,11 +102,11 @@ function create() {
 
   stars = currentScene.physics.add.group({
     key: 'star',
-    repeat: 11,
+    repeat: 300,
     setXY: {
       x: 12,
       y: 0,
-      stepX: WINDOW_WIDTH / 12,
+      stepX: WINDOW_WIDTH / 300,
     },
     collideWorldBounds: true,
   });
@@ -143,13 +143,16 @@ function update() {
   } else if (cursors.right.isDown) {
     player.setVelocityX(160);
     player.anims.play('right', true);
+  } else if (cursors.down.isDown) {
+    player.setVelocityY(3000);
+    player.anims.play('turn');
   } else {
     player.setVelocityX(0);
     player.anims.play('turn');
   }
 
-  if (cursors.up.isDown && player.body.touching.down) {
-    player.setVelocityY(-350);
+  if (cursors.up.isDown) {
+    player.setVelocityY(-400);
   }
 }
 
@@ -159,28 +162,38 @@ function collectStar(player, star) {
   score += 10;
   scoreText.setText(`score:${score}`);
 
+  const x =
+    player.x < WINDOW_WIDTH / 2
+      ? Phaser.Math.Between(WINDOW_WIDTH / 2, WINDOW_WIDTH)
+      : Phaser.Math.Between(0, WINDOW_WIDTH / 2);
+
+  const bomb = bombs.create(x, 16, 'bomb').setScale(3).refreshBody();
+  bomb.setBounce(1);
+  bomb.setCollideWorldBounds(true);
+  bomb.setVelocity(Phaser.Math.Between(-5000, 5000), 3000);
+
   if (stars.countActive(true) === 0) {
     stars.children.iterate((child: any) => {
       child.enableBody(true, child.x, 0, true, true);
     });
 
-    const x =
-      player.x < WINDOW_WIDTH / 2
-        ? Phaser.Math.Between(WINDOW_WIDTH / 2, WINDOW_WIDTH)
-        : Phaser.Math.Between(0, WINDOW_WIDTH / 2);
-    const bomb = bombs.create(x, 16, 'bomb');
-    bomb.setBounce(1);
-    bomb.setCollideWorldBounds(true);
-    bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+    // const x =
+    //   player.x < WINDOW_WIDTH / 2
+    //     ? Phaser.Math.Between(WINDOW_WIDTH / 2, WINDOW_WIDTH)
+    //     : Phaser.Math.Between(0, WINDOW_WIDTH / 2);
+    // const bomb = bombs.create(x, 16, 'bomb').setScale(3).refreshBody();
+    // bomb.setBounce(1);
+    // bomb.setCollideWorldBounds(true);
+    // bomb.setVelocity(Phaser.Math.Between(-500, 500), 500);
   }
 }
 
 function bombHit(player, bomb) {
-  this.physics.pause();
+  // this.physics.pause();
   player.setTint(0xff0000);
-  player.anims.play('turn');
+  // player.anims.play('turn');
 
-  gameOver = true;
+  // gameOver = true;
 }
 
 function createFirstGame() {
