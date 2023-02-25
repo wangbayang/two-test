@@ -131,7 +131,7 @@ function create() {
 
   bombs = currentScene.physics.add.group();
   currentScene.physics.add.collider(bombs, platforms);
-  currentScene.physics.add.collider(bombs, player, bombHit, null, currentScene);
+  currentScene.physics.add.collider(player, bombs, bombHit, null, currentScene);
 }
 
 function update() {
@@ -175,7 +175,7 @@ function collectStar(player, star) {
   }
 }
 
-function bombHit(bomb, player) {
+function bombHit(player, bomb) {
   this.physics.pause();
   player.setTint(0xff0000);
   player.anims.play('turn');
