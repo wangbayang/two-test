@@ -111,9 +111,11 @@ function create() {
     collideWorldBounds: true,
   });
 
-  stars.children.iterate((child: any) => {
-    child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
-  });
+  stars.children.iterate(
+    (child: Phaser.Types.Physics.Arcade.ImageWithDynamicBody) => {
+      child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+    }
+  );
 
   currentScene.physics.add.collider(platforms, stars);
   currentScene.physics.add.overlap(
@@ -153,16 +155,21 @@ function update() {
   }
 }
 
-function collectStar(player, star) {
+function collectStar(
+  player,
+  star: Phaser.Types.Physics.Arcade.ImageWithDynamicBody
+) {
   star.disableBody(true, true);
 
   score += 10;
   scoreText.setText(`score:${score}`);
 
   if (stars.countActive(true) === 0) {
-    stars.children.iterate((child: any) => {
-      child.enableBody(true, child.x, 0, true, true);
-    });
+    stars.children.iterate(
+      (child: Phaser.Types.Physics.Arcade.ImageWithDynamicBody) => {
+        child.enableBody(true, child.x, 0, true, true);
+      }
+    );
 
     const x =
       player.x < WINDOW_WIDTH / 2
