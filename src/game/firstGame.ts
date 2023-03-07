@@ -2,11 +2,15 @@ import * as Phaser from 'phaser';
 
 import { WINDOW_WIDTH, WINDOW_HEIGHT } from '../const';
 
-import skyPng from '../assets/sky2.jpg';
+import skyPng from '../assets/sky3.jpeg';
 import groundPng from '../assets/platform.png';
 import bombPng from '../assets/bomb.png';
 import starPng from '../assets/star.png';
 import dudePng from '../assets/dude.png';
+
+import qimaMP3 from '../assets/audio/qima.mp3';
+import jumpMP3 from '../assets/audio/jump.mp3';
+import growUpMP3 from '../assets/audio/growUp.mp3';
 
 let platforms: Phaser.Physics.Arcade.StaticGroup = null,
   player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody = null,
@@ -15,7 +19,140 @@ let platforms: Phaser.Physics.Arcade.StaticGroup = null,
   score = 0,
   scoreText: Phaser.GameObjects.Text = null,
   bombs: Phaser.Physics.Arcade.Group = null,
-  gameOver = false;
+  gameOver = false,
+  jumpTime = 0,
+  clickTime = 0,
+  game: Phaser.Game;
+
+class FirstGameScene extends Phaser.Scene {
+  sound: Phaser.Sound.HTML5AudioSoundManager;
+
+  constructor() {
+    super('first-game');
+  }
+
+  init() {
+    this.sound = new Phaser.Sound.HTML5AudioSoundManager(game);
+  }
+
+  preload() {
+    this.load.image('sky', skyPng);
+    this.load.image('ground', groundPng);
+    this.load.image('bomb', bombPng);
+    this.load.image('star', starPng);
+    this.load.spritesheet('dude', dudePng, {
+      frameWidth: 32,
+      frameHeight: 48,
+    });
+
+    this.load.audio('qima', qimaMP3);
+    this.load.audio('jump', jumpMP3, { instances: 2 });
+    this.load.audio('growUp', growUpMP3, { instances: 100 });
+  }
+
+  create() {
+    this.add.image(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, 'sky');
+
+    platforms = this.physics.add.staticGroup();
+
+    platforms
+      .create(WINDOW_WIDTH / 2, WINDOW_HEIGHT - 32, 'ground')
+      .setScale(2.5)
+      .refreshBody();
+
+    platforms.create(WINDOW_WIDTH - 150, 150, 'ground');
+    platforms.create(100, 350, 'ground');
+    platforms.create(WINDOW_WIDTH - 200, 550, 'ground');
+
+    player = this.physics.add.sprite(100, 450, 'dude');
+    player.setBounce(0.2);
+    player.setCollideWorldBounds(true);
+
+    this.physics.add.collider(platforms, player);
+
+    cursors = this.input.keyboard.createCursorKeys();
+
+    this.anims.create({
+      key: 'left',
+      frames: this.anims.generateFrameNumbers('dude', {
+        start: 0,
+        end: 3,
+      }),
+      frameRate: 10,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: 'turn',
+      frames: [{ key: 'dude', frame: 4 }],
+      frameRate: 20,
+    });
+
+    this.anims.create({
+      key: 'right',
+      frames: this.anims.generateFrameNumbers('dude', {
+        start: 5,
+        end: 8,
+      }),
+      frameRate: 10,
+      repeat: -1,
+    });
+
+    stars = this.physics.add.group({
+      key: 'star',
+      repeat: 30,
+      setXY: {
+        x: 12,
+        y: 0,
+        stepX: WINDOW_WIDTH / 30,
+      },
+      collideWorldBounds: true,
+    });
+
+    stars.children.iterate(
+      (child: Phaser.Types.Physics.Arcade.ImageWithDynamicBody) => {
+        child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+      }
+    );
+
+    this.physics.add.collider(platforms, stars);
+    this.physics.add.overlap(player, stars, collectStar, null, this);
+
+    scoreText = this.add.text(16, 16, 'score:0', {
+      fontSize: '32px',
+      color: 'yellow',
+    });
+
+    bombs = this.physics.add.group();
+    this.physics.add.collider(bombs, platforms);
+    this.physics.add.collider(player, bombs, bombHit, null, this);
+
+    loadSound(this);
+  }
+
+  update() {
+    if (gameOver) return;
+
+    if (cursors.left.isDown) {
+      player.setVelocityX(-160);
+      player.anims.play('left', true);
+    } else if (cursors.right.isDown) {
+      player.setVelocityX(160);
+      player.anims.play('right', true);
+    } else {
+      player.setVelocityX(0);
+      player.anims.play('turn');
+    }
+
+    if (cursors.up.isDown && player.body.touching.down) {
+      player.setVelocityY(-350);
+      jumpTime += 1;
+      this.sound.play('jump', {
+        detune: jumpTime % 3 ? 0 : -1200,
+      });
+    }
+  }
+}
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -30,129 +167,26 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: {
-    preload,
-    create,
-    update,
+  scene: FirstGameScene,
+  audio: {
+    disableWebAudio: true,
   },
 };
 
-function preload() {
-  const currentScene: Phaser.Scene = this;
-
-  currentScene.load.image('sky', skyPng);
-  currentScene.load.image('ground', groundPng);
-  currentScene.load.image('bomb', bombPng);
-  currentScene.load.image('star', starPng);
-  currentScene.load.spritesheet('dude', dudePng, {
-    frameWidth: 32,
-    frameHeight: 48,
-  });
-}
-
-function create() {
-  const currentScene: Phaser.Scene = this;
-
-  currentScene.add.image(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, 'sky');
-
-  platforms = currentScene.physics.add.staticGroup();
-
-  platforms
-    .create(WINDOW_WIDTH / 2, WINDOW_HEIGHT - 32, 'ground')
-    .setScale(2.5)
-    .refreshBody();
-
-  platforms.create(WINDOW_WIDTH - 150, 150, 'ground');
-  platforms.create(100, 350, 'ground');
-  platforms.create(WINDOW_WIDTH - 200, 550, 'ground');
-
-  player = currentScene.physics.add.sprite(100, 450, 'dude');
-  player.setBounce(0.2);
-  player.setCollideWorldBounds(true);
-
-  currentScene.physics.add.collider(platforms, player);
-
-  cursors = currentScene.input.keyboard.createCursorKeys();
-
-  currentScene.anims.create({
-    key: 'left',
-    frames: currentScene.anims.generateFrameNumbers('dude', {
-      start: 0,
-      end: 3,
-    }),
-    frameRate: 10,
-    repeat: -1,
+function loadSound(currentScene: FirstGameScene) {
+  const qimaSound = currentScene.sound.add('qima', {
+    loop: true,
   });
 
-  currentScene.anims.create({
-    key: 'turn',
-    frames: [{ key: 'dude', frame: 4 }],
-    frameRate: 20,
-  });
+  currentScene.sound.pauseOnBlur = true;
 
-  currentScene.anims.create({
-    key: 'right',
-    frames: currentScene.anims.generateFrameNumbers('dude', {
-      start: 5,
-      end: 8,
-    }),
-    frameRate: 10,
-    repeat: -1,
-  });
-
-  stars = currentScene.physics.add.group({
-    key: 'star',
-    repeat: 11,
-    setXY: {
-      x: 12,
-      y: 0,
-      stepX: WINDOW_WIDTH / 12,
-    },
-    collideWorldBounds: true,
-  });
-
-  stars.children.iterate(
-    (child: Phaser.Types.Physics.Arcade.ImageWithDynamicBody) => {
-      child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+  currentScene.input.on('pointerdown', () => {
+    clickTime += 1;
+    if (clickTime === 1) {
+      qimaSound.play();
     }
-  );
-
-  currentScene.physics.add.collider(platforms, stars);
-  currentScene.physics.add.overlap(
-    player,
-    stars,
-    collectStar,
-    null,
-    currentScene
-  );
-
-  scoreText = currentScene.add.text(16, 16, 'score:0', {
-    fontSize: '32px',
-    color: 'yellow',
+    qimaSound.setRate(clickTime % 2 ? 1 : 5);
   });
-
-  bombs = currentScene.physics.add.group();
-  currentScene.physics.add.collider(bombs, platforms);
-  currentScene.physics.add.collider(player, bombs, bombHit, null, currentScene);
-}
-
-function update() {
-  if (gameOver) return;
-
-  if (cursors.left.isDown) {
-    player.setVelocityX(-160);
-    player.anims.play('left', true);
-  } else if (cursors.right.isDown) {
-    player.setVelocityX(160);
-    player.anims.play('right', true);
-  } else {
-    player.setVelocityX(0);
-    player.anims.play('turn');
-  }
-
-  if (cursors.up.isDown && player.body.touching.down) {
-    player.setVelocityY(-350);
-  }
 }
 
 function collectStar(
@@ -160,6 +194,7 @@ function collectStar(
   star: Phaser.Types.Physics.Arcade.ImageWithDynamicBody
 ) {
   star.disableBody(true, true);
+  (this as FirstGameScene).sound.play('growUp');
 
   score += 10;
   scoreText.setText(`score:${score}`);
@@ -191,7 +226,7 @@ function bombHit(player, bomb) {
 }
 
 function createFirstGame() {
-  const game = new Phaser.Game(config);
+  game = new Phaser.Game(config);
 }
 
 export default createFirstGame;
