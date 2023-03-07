@@ -22,31 +22,32 @@ class GameObjectScene extends Phaser.Scene {
   }
 
   create() {
-    loadSound(this);
+    this.loadSound();
   }
-}
 
-function loadSound(scene: GameObjectScene) {
-  let qimaSound = scene.sound.add('qima', {
-    loop: true,
-  });
+  loadSound() {
+    let qimaSound = this.sound.add('qima', {
+      loop: true,
+    });
 
-  scene.sound.pauseOnBlur = false;
+    this.sound.pauseOnBlur = true;
 
-  scene.input.on('pointerdown', () => {
-    clickTime += 1;
+    this.input.on('pointerdown', () => {
+      clickTime += 1;
 
-    if (clickTime === 1) {
-      qimaSound.play();
-      return;
-    }
+      if (clickTime === 1) {
+        this.sound.unlock();
+        qimaSound.play();
+        return;
+      }
 
-    if (clickTime % 2) {
-      qimaSound.resume();
-    } else {
-      qimaSound.pause();
-    }
-  });
+      if (clickTime % 2) {
+        qimaSound.resume();
+      } else {
+        qimaSound.pause();
+      }
+    });
+  }
 }
 
 const config: Phaser.Types.Core.GameConfig = {
